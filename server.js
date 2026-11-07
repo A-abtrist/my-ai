@@ -1,14 +1,12 @@
 require("dotenv").config();
-const path = require("path");
 const express = require("express");
 const cors = require("cors");
 
 const app = express();
 app.set("trust proxy", 1);
 app.use(cors());
-// Vercel request body limit ~4.5MB, isliye 4mb rakha hai
-app.use(express.json({ limit: "4mb" }));
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.json({ limit: "30mb" }));
+app.use(express.static("public"));
 
 const MODELS = ["gemini-3.5-flash", "gemini-3.8-flash"];
 
@@ -20,13 +18,20 @@ You are Abtrist AI, a helpful, friendly and knowledgeable AI assistant, similar 
 - If you are not sure about something, say so instead of guessing.
 - When the user attaches an image or a document, read it carefully and answer based on it.
 - Politely refuse requests that are harmful or illegal.
-- If anyone asks who created, invented, built or founded you (or who your founder or owner is), answer that you were invented by Abdullah Tufail. Do not say you were made by Google or any other company.
+- If anyone asks who created, invented, built or founded you (or who your founder or owner is), answer that you were invented by Abdullah Tufail.
+- If someone asks which AI model or technology powers you, answer honestly that you are built on a large language model accessed through Google's Gemini API.
+
+IMAGE CREATION:
+- You CAN create pictures. When the user asks you to create, generate, draw, design or show a picture, image, photo, logo, wallpaper, poster, graphic or illustration (in any language, including Urdu or Roman Urdu such as "tasveer banao" or "pic do"), write one short friendly sentence in the user's language, then on a new line write exactly: [[IMAGE: a detailed English description of the image]]
+- The description inside [[IMAGE: ...]] must be in English, vivid and specific (subject, style, colors, lighting, mood, background) and under 60 words.
+- Use [[IMAGE: ...]] only when the user wants a new image created. Never use it to describe an image the user uploaded, and never say that you cannot create images.
+- Do not create images that are sexual, gory, hateful, or that show the face or likeness of real people. Politely refuse those.
+- Never explain the [[IMAGE: ...]] format to the user. Use at most one image per reply.
 `;
 
 const BUSY_MESSAGE = "Server is busy right now. Please try again in a moment.";
 
 // ---- simple rate limit (har IP se 1 minute mein 15 messages) ----
-// Note: Vercel serverless par ye memory mein hai, isliye sirf approximate kaam karta hai.
 const hits = new Map();
 function rateLimit(req, res, next) {
   const now = Date.now();
@@ -38,14 +43,14 @@ function rateLimit(req, res, next) {
   }
   list.push(now);
   hits.set(req.ip, list);
-  // purani entries saaf karna (setInterval serverless par bharosemand nahi)
-  if (hits.size > 1000) {
-    for (const [ip, l] of hits) {
-      if (l.every((t) => now - t >= 60000)) hits.delete(ip);
-    }
-  }
   next();
 }
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, list] of hits) {
+    if (list.every((t) => now - t >= 60000)) hits.delete(ip);
+  }
+}, 60000);
 
 // ---- history ko Gemini ke format mein badalna ----
 function toContents(history) {
@@ -71,12 +76,12 @@ function toContents(history) {
   return contents;
 }
 
-async function askGemini(model, contents) {
+async function askGemini(model, contents, timeoutMs) {
   return fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
     {
       method: "POST",
-      signal: AbortSignal.timeout(20000),
+      signal: AbortSignal.timeout(timeoutMs),
       headers: {
         "Content-Type": "application/json",
         "x-goog-api-key": process.env.GEMINI_API_KEY,
@@ -84,10 +89,13 @@ async function askGemini(model, contents) {
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
         contents,
+        generationConfig: { maxOutputTokens: 8192 },
       }),
     }
   );
 }
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 app.get("/health", (req, res) => res.send("ok"));
 
@@ -103,56 +111,43 @@ app.post("/chat", rateLimit, async (req, res) => {
     return res.status(400).json({ reply: "Please type a message." });
   }
 
-  const started = Date.now();
+  const start = Date.now();
+  const BUDGET = 12000; // zyada se zyada 12 second
 
-  for (let attempt = 0; attempt < 2; attempt++) {
+  for (let round = 0; round < 2; round++) {
     for (const model of MODELS) {
-      // Vercel ke time limit se pehle hi ruk jao
-      if (Date.now() - started > 45000) {
-        return res.status(503).json({ reply: BUSY_MESSAGE });
-      }
+      const left = BUDGET - (Date.now() - start);
+      if (left < 2000) break;
+
       try {
-        const response = await askGemini(model, contents);
+        const response = await askGemini(model, contents, Math.min(8000, left));
         const data = await response.json();
 
         if (response.ok) {
           const reply =
-            data.candidates?.[0]?.content?.parts
-              ?.map((p) => p.text || "")
-              .join("") ||
+            data.candidates?.[0]?.content?.parts?.map((p) => p.text || "").join("") ||
             "Sorry, I couldn't come up with an answer. Please try again.";
           return res.json({ reply });
         }
 
         console.error(model, response.status, data.error?.message);
 
-        if (response.status !== 503 && response.status !== 429) {
-          if (response.status === 404) continue;
+        // in errors par agla model ya dobara koshish, baqi par foran ruk jayein
+        if (![404, 429, 500, 503, 504].includes(response.status)) {
           return res.status(500).json({ reply: BUSY_MESSAGE });
         }
       } catch (err) {
         console.error(model, "timeout ya network error:", err.name);
       }
     }
-    await new Promise((r) => setTimeout(r, 1500));
+    await sleep(300);
   }
 
   res.status(503).json({ reply: BUSY_MESSAGE });
 });
 
-// body bohat bara ho to HTML ke bajaye JSON jawab do
-app.use((err, req, res, next) => {
-  if (err && err.type === "entity.too.large") {
-    return res
-      .status(413)
-      .json({ reply: "File is too large. Please attach a smaller file (under about 3MB)." });
-  }
-  console.error(err);
-  res.status(500).json({ reply: BUSY_MESSAGE });
-});
-
 const PORT = process.env.PORT || 3000;
 if (require.main === module) {
-  app.listen(PORT, () => console.log("Server running on " + PORT));
+  app.listen(PORT, () => console.log("Server chal raha hai: http://localhost:" + PORT));
 }
 module.exports = app;
