@@ -8,7 +8,22 @@ app.use(cors());
 app.use(express.json({ limit: "30mb" }));
 app.use(express.static("public"));
 
-const MODELS = ["gemini-3.5-flash", "gemini-3.8-flash"];
+const MODELS = (process.env.GEMINI_MODELS || "gemini-3.5-flash,gemini-3.8-flash,gemini-3.6-flash")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+// jis model ka quota khatam ho use kuch der ke liye skip karein
+const blockedUntil = new Map();
+const isBlocked = (model) => (blockedUntil.get(model) || 0) > Date.now();
+const blockModel = (model, ms) => blockedUntil.set(model, Date.now() + ms);
+
+function parseRetryMs(msg) {
+  const m = /retry in (?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:([\d.]+)s)?/i.exec(msg || "");
+  if (!m) return 60000;
+  const ms = ((+m[1] || 0) * 3600 + (+m[2] || 0) * 60 + (parseFloat(m[3]) || 0)) * 1000;
+  return Math.min(Math.max(ms, 5000), 2 * 3600 * 1000);
+}
 
 const SYSTEM_PROMPT = `
 You are Abtrist AI, a helpful, friendly and knowledgeable AI assistant, similar to ChatGPT.
@@ -116,6 +131,8 @@ app.post("/chat", rateLimit, async (req, res) => {
 
   for (let round = 0; round < 2; round++) {
     for (const model of MODELS) {
+      if (isBlocked(model)) continue;
+
       const left = BUDGET - (Date.now() - start);
       if (left < 2000) break;
 
@@ -130,20 +147,23 @@ app.post("/chat", rateLimit, async (req, res) => {
           return res.json({ reply });
         }
 
-        console.error(model, response.status, data.error?.message);
+        const msg = data.error?.message || "";
+        console.error(model, response.status, msg.slice(0, 160));
 
-        // in errors par agla model ya dobara koshish, baqi par foran ruk jayein
-        if (![404, 429, 500, 503, 504].includes(response.status)) {
-          return res.status(500).json({ reply: BUSY_MESSAGE });
-        }
+        if (response.status === 429) blockModel(model, parseRetryMs(msg));
+        else if ([400, 403, 404].includes(response.status)) blockModel(model, 10 * 60 * 1000);
       } catch (err) {
         console.error(model, "timeout ya network error:", err.name);
       }
     }
+
+    if (MODELS.every(isBlocked)) break;
     await sleep(300);
   }
 
-  res.status(503).json({ reply: BUSY_MESSAGE });
+  // agar sab models ka quota khatam hai to foran jawab (client dobara koshish nahi karega)
+  const status = MODELS.every(isBlocked) ? 429 : 503;
+  res.status(status).json({ reply: BUSY_MESSAGE });
 });
 
 const PORT = process.env.PORT || 3000;
