@@ -4,9 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Abtrist AI - Free AI Chat Assistant</title>
-<meta name="description" content="Abtrist AI is a free AI chat assistant. Ask questions, write and fix code, analyze images and PDFs, and talk with your voice.">
+<meta name="description" content="Abtrist AI is a free AI chat assistant. Ask questions, write and fix code, create images, analyze pictures and PDFs, and talk with your voice.">
 <meta name="robots" content="index, follow">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✨</text></svg>">
+<!-- Google Search Console ka verification tag yahan paste karein -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%237c3aed'/%3E%3Cstop offset='.55' stop-color='%23ec4899'/%3E%3Cstop offset='1' stop-color='%2306b6d4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cpath d='M18 48 L32 14 L46 48' fill='none' stroke='white' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='32' cy='38' r='4.5' fill='white'/%3E%3Ccircle cx='49' cy='17' r='3.5' fill='white'/%3E%3C/svg%3E">
 
 <script>
   try {
@@ -98,7 +99,12 @@ header {
   color: var(--text); font-size: 20px; cursor: pointer;
 }
 .hbtn:hover { background: var(--hover); }
-.brand { font-size: 17px; font-weight: 600; }
+.brand { display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 600; }
+.bm {
+  width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #7c3aed, #ec4899 55%, #06b6d4);
+}
+.bm svg { width: 18px; height: 18px; }
 
 #messages { flex: 1; overflow-y: auto; scroll-behavior: smooth; }
 .thread { max-width: 780px; margin: 0 auto; padding: 8px 16px 24px; }
@@ -106,12 +112,13 @@ header {
 /* hero */
 .hero { text-align: center; padding-top: 12vh; }
 .logo {
-  width: 64px; height: 64px; margin: 0 auto 18px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center; font-size: 30px; color: #fff;
-  background: linear-gradient(135deg, #7c3aed, #ec4899, #06b6d4);
-  box-shadow: 0 10px 40px rgba(124, 58, 237, .45);
+  width: 76px; height: 76px; margin: 0 auto 18px; border-radius: 24px;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #7c3aed, #ec4899 55%, #06b6d4);
+  box-shadow: 0 12px 44px rgba(124, 58, 237, .5);
   animation: bob 3.5s ease-in-out infinite;
 }
+.logo svg { width: 46px; height: 46px; }
 @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 .hero h1 { font-size: 28px; font-weight: 600; margin: 0 0 26px; }
 .suggest { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
@@ -135,10 +142,11 @@ header {
 .fchip { background: var(--panel); border-radius: 10px; padding: 6px 10px; font-size: 12.5px; }
 
 .avatar {
-  width: 32px; height: 32px; flex-shrink: 0; border-radius: 50%; color: #fff; font-size: 15px;
+  width: 32px; height: 32px; flex-shrink: 0; border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(135deg, #7c3aed, #ec4899);
+  background: linear-gradient(135deg, #7c3aed, #ec4899 55%, #06b6d4);
 }
+.avatar svg { width: 19px; height: 19px; }
 .content { flex: 1; min-width: 0; line-height: 1.7; }
 .md { word-wrap: break-word; }
 .md.err { color: #f87171; }
@@ -161,6 +169,24 @@ header {
   position: absolute; top: 8px; right: 8px; background: var(--panel); color: var(--text);
   border: none; border-radius: 8px; padding: 4px 10px; font-size: 12px; cursor: pointer;
 }
+
+/* generated image */
+.imgcard { margin: 6px 0 4px; }
+.imgbox {
+  position: relative; width: 100%; max-width: 420px; aspect-ratio: 1 / 1;
+  background: var(--panel); border-radius: 16px; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+.imgstatus { padding: 20px; text-align: center; color: var(--muted); font-size: 14px; animation: blink2 1.6s ease-in-out infinite; }
+.imgstatus.fail { animation: none; color: #f87171; }
+@keyframes blink2 { 0%,100% { opacity: .5; } 50% { opacity: 1; } }
+.genimg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; cursor: zoom-in; }
+.imgbar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.imgbar button {
+  background: var(--panel); color: var(--text); border: 1px solid var(--border);
+  border-radius: 10px; padding: 7px 12px; font-size: 13px; cursor: pointer;
+}
+.imgbar button:hover { background: var(--hover); }
 
 .actions { display: flex; gap: 2px; margin-top: 6px; }
 .actions button {
@@ -257,7 +283,7 @@ header {
   <main id="mainArea">
     <header>
       <button class="hbtn" id="menuBtn" title="Menu">☰</button>
-      <div class="brand">Abtrist AI</div>
+      <div class="brand"><span class="bm" id="brandMark"></span>Abtrist AI</div>
     </header>
 
     <div id="messages"><div class="thread" id="thread"></div></div>
@@ -290,6 +316,14 @@ header {
 const STORE_KEY = "abtrist_chats_v1";
 const BUSY_TEXT = "Server is busy right now. Please try again in a moment.";
 
+// Abtrist AI ka logo: safed "A", crossbar ki jagah dot, aur kone mein spark
+const LOGO_SVG =
+  '<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+  '<path d="M18 48 L32 14 L46 48" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>' +
+  '<circle cx="32" cy="38" r="4.5" fill="#fff"/>' +
+  '<circle cx="49" cy="17" r="3.5" fill="#fff" opacity=".85"/>' +
+  '</svg>';
+
 const $ = (id) => document.getElementById(id);
 const thread = $("thread");
 const messagesEl = $("messages");
@@ -299,6 +333,8 @@ const micBtn = $("micBtn");
 const fileInput = $("fileInput");
 const attachmentsEl = $("attachments");
 const chatListEl = $("chatList");
+
+$("brandMark").innerHTML = LOGO_SVG;
 
 let chats = loadChats();
 let currentId = null;
@@ -312,6 +348,11 @@ function el(tag, cls, text) {
   if (cls) e.className = cls;
   if (text !== undefined) e.textContent = text;
   return e;
+}
+function logoAvatar() {
+  const a = el("div", "avatar");
+  a.innerHTML = LOGO_SVG;
+  return a;
 }
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 function getCurrent() { return chats.find((c) => c.id === currentId) || null; }
@@ -386,6 +427,107 @@ function renderMarkdown(target, text) {
   }
 }
 
+/* ---------------- image generation ---------------- */
+const IMG_RE = /\[\[IMAGE:\s*([\s\S]*?)\]\]/i;
+
+function splitImage(text) {
+  const m = text.match(IMG_RE);
+  if (!m) return { clean: text, prompt: null };
+  return {
+    clean: text.replace(IMG_RE, "").trim(),
+    prompt: m[1].replace(/\s+/g, " ").trim().slice(0, 500)
+  };
+}
+
+function hashSeed(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h) % 1000000;
+}
+
+function imageUrl(prompt, seed) {
+  return "https://image.pollinations.ai/prompt/" + encodeURIComponent(prompt) +
+    "?model=flux&width=1024&height=1024&nologo=true&seed=" + seed;
+}
+
+async function downloadImage(url, name) {
+  try {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error("bad");
+    const b = await r.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(b);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+  } catch (e) {
+    window.open(url, "_blank");
+    toast("Opened in a new tab. Right-click (or long-press) the image to save it.");
+  }
+}
+
+function imageCard(prompt) {
+  const card = el("div", "imgcard");
+  const box = el("div", "imgbox");
+  const status = el("div", "imgstatus");
+  box.appendChild(status);
+  const bar = el("div", "imgbar");
+  card.appendChild(box);
+  card.appendChild(bar);
+
+  let seed = hashSeed(prompt);
+  let autoRetried = false;
+  let img = null;
+
+  function load() {
+    bar.innerHTML = "";
+    status.className = "imgstatus";
+    status.style.display = "block";
+    status.textContent = "🎨 Creating your image... (can take 10-30 seconds)";
+    if (img) img.remove();
+
+    const url = imageUrl(prompt, seed);
+    img = new Image();
+    img.className = "genimg";
+    img.alt = prompt;
+    img.style.display = "none";
+
+    img.onload = () => {
+      status.style.display = "none";
+      img.style.display = "block";
+      const dl = el("button", "", "⬇ Download");
+      dl.onclick = () => downloadImage(url, "abtrist-ai-image.png");
+      const again = el("button", "", "🔄 New version");
+      again.onclick = () => { seed = Math.floor(Math.random() * 1000000); load(); };
+      bar.appendChild(dl);
+      bar.appendChild(again);
+    };
+
+    img.onerror = () => {
+      if (!autoRetried) {
+        autoRetried = true;
+        seed = seed + 1;
+        setTimeout(load, 3000);
+        return;
+      }
+      status.className = "imgstatus fail";
+      status.textContent = "The image service is busy right now. Please try again.";
+      const retry = el("button", "", "🔄 Try again");
+      retry.onclick = () => { seed = Math.floor(Math.random() * 1000000); autoRetried = false; load(); };
+      bar.appendChild(retry);
+    };
+
+    img.onclick = () => window.open(url, "_blank");
+    box.appendChild(img);
+    img.src = url;
+  }
+
+  load();
+  return card;
+}
+
 /* ---------------- rendering ---------------- */
 function userEl(m) {
   const wrap = el("div", "msg user");
@@ -402,23 +544,28 @@ function userEl(m) {
 
 function botEl(m, isLast) {
   const wrap = el("div", "msg bot");
-  wrap.appendChild(el("div", "avatar", "✦"));
+  wrap.appendChild(logoAvatar());
   const content = el("div", "content");
+
+  const parts = m.error ? { clean: m.text, prompt: null } : splitImage(m.text);
   const body = el("div", "md");
   if (m.error) { body.classList.add("err"); body.textContent = m.text; }
-  else renderMarkdown(body, m.text);
+  else renderMarkdown(body, parts.clean);
+  if (!parts.clean) body.style.display = "none";
   content.appendChild(body);
 
+  if (parts.prompt) content.appendChild(imageCard(parts.prompt));
+
   const actions = el("div", "actions");
-  if (!m.error) {
+  if (!m.error && parts.clean) {
     const copy = el("button", "", "📋");
     copy.title = "Copy";
-    copy.onclick = () => navigator.clipboard.writeText(m.text).then(() => toast("Copied"));
+    copy.onclick = () => navigator.clipboard.writeText(parts.clean).then(() => toast("Copied"));
     actions.appendChild(copy);
 
     const spk = el("button", "", "🔊");
     spk.title = "Read aloud";
-    spk.onclick = () => speak(m.text, spk);
+    spk.onclick = () => speak(parts.clean, spk);
     actions.appendChild(spk);
   }
   if (isLast) {
@@ -434,7 +581,7 @@ function botEl(m, isLast) {
 
 function addTyping() {
   const wrap = el("div", "msg bot");
-  wrap.appendChild(el("div", "avatar", "✦"));
+  wrap.appendChild(logoAvatar());
   const t = el("div", "typing");
   t.innerHTML = "<span></span><span></span><span></span>";
   wrap.appendChild(t);
@@ -444,10 +591,10 @@ function addTyping() {
 }
 
 const SUGGESTIONS = [
-  "Explain how the internet works in simple words",
+  "Create an image of a futuristic city at sunset",
   "Write a Python script to rename files in a folder",
   "Help me write a professional email to my boss",
-  "Give me a healthy 3-day meal plan"
+  "Explain how the internet works in simple words"
 ];
 
 function renderMessages() {
@@ -455,7 +602,9 @@ function renderMessages() {
   const chat = getCurrent();
   if (!chat || chat.messages.length === 0) {
     const hero = el("div", "hero");
-    hero.appendChild(el("div", "logo", "✦"));
+    const logo = el("div", "logo");
+    logo.innerHTML = LOGO_SVG;
+    hero.appendChild(logo);
     hero.appendChild(el("h1", "", "How can I help you today?"));
     const s = el("div", "suggest");
     SUGGESTIONS.forEach((q) => {
@@ -592,14 +741,20 @@ async function getReply(chat) {
   abortCtl = new AbortController();
 
   try {
-    const res = await fetch("/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ history: buildPayload(chat) }),
-      signal: abortCtl.signal
-    });
-    let data = {};
-    try { data = await res.json(); } catch (e) {}
+    let res, data = {};
+    for (let tryNo = 0; tryNo < 2; tryNo++) {
+      const t0 = Date.now();
+      res = await fetch("/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ history: buildPayload(chat) }),
+        signal: abortCtl.signal
+      });
+      try { data = await res.json(); } catch (e) { data = {}; }
+      if (res.ok || res.status === 429 || res.status === 400) break;
+      if (Date.now() - t0 > 9000) break; // pehli koshish mein bohat der lag gayi, dobara wait na karein
+      await new Promise((r) => setTimeout(r, 1000));
+    }
     typing.remove();
     if (res.ok && data.reply) chat.messages.push({ role: "model", text: data.reply });
     else chat.messages.push({ role: "model", text: data.reply || BUSY_TEXT, error: true });
@@ -648,8 +803,8 @@ async function addFiles(fileList) {
       /\.(txt|md|csv|json|js|ts|py|html|css|xml|log|java|c|cpp)$/i.test(file.name);
 
     if (isImage || isPdf) {
-      if (pendingFiles.filter((f) => f.kind === "inline").length >= 3) { toast("Maximum 3 images/PDFs per message."); continue; }
-      if (file.size > 4 * 1024 * 1024) { toast(file.name + " is too large (max 4 MB)."); continue; }
+      if (pendingFiles.filter((f) => f.kind === "inline").length >= 2) { toast("Maximum 2 images/PDFs per message."); continue; }
+      if (file.size > 1.5 * 1024 * 1024) { toast(file.name + " is too large (max 1.5 MB)."); continue; }
       try {
         const data = await readBase64(file);
         pendingFiles.push({ name: file.name, mime: file.type, size: file.size, data, kind: "inline" });
